@@ -1,0 +1,519 @@
+/**
+ * Shared Messages from the Equipment Service that other services might need
+ */
+syntax = "proto3";
+
+option csharp_namespace = "DriverWithDatabase";
+package fabscape;
+
+message Fileinfo {
+    string name = 1;
+    uint32 size = 2;
+    string mimetype = 3;
+}
+
+// ------------------------------------------------------------------------------------------------
+// EQUIPMENT
+// ------------------------------------------------------------------------------------------------
+
+/// Holds information about a piece of equipment. Returned when a piece of equipment is requested.
+message Equipment {
+    uint32 id = 1; /// Unique ID of equipment. Ex. 3
+    string serial_number = 2; /// Immutable ID (serial number) of the equipment. Ex. 67340025
+    string name = 3; /// The name of the equipment. Ex. Laser 7503
+    string description = 4; /// A short description of the equipment. Ex. A laser that has X properties and excels at Y.
+    string owner_name = 5; /// The name of the user that owns the equipment. Ex. Joe Smith
+    string owner_email = 6; /// The email of the user that owns the equipment. Ex. jsmith54@gmail.com
+    string ip_address = 7; /// The IP address that this piece of equipment can be accessed at. Ex. 172.43.11.21
+    EquipmentStatus status = 8; /// The current status of the piece of equipment
+    Model model = 9; /// A Model message that corresponds to this equipment's model. See Model below.
+    repeated uint32 groups = 10 [packed=true]; /// A list of Group messages that this equipment is apart of. See Group below.
+    repeated uint32 lines = 11 [packed=true]; /// Unique IDs of lines this equipment belongs to
+    map<string, string> metadata = 15; /// A list of meta data with string keys and values. Ex. ("key" => "value", "other" => "value2")
+}
+
+/// Holds information about a piece of equipment's type. Returned as a part of equipment.
+message Type {
+    uint32 id = 1; /// Unique ID of this equipment type. Ex. 3
+    string name = 2; /// Name of the equipment type. Ex. Laser
+    string description = 3; /// A short description or clarifying comments of the type. Ex. This is a particular type of laser.
+}
+
+/// Holds information about a piece of equipment's model. Returned as a part of equipment.
+message Model {
+    uint32 id = 1; /// Unique ID of this equipment model. Ex. 3
+    string key = 2; /// The key of the model all one word separated by underscores. Ex. ab_1234
+    string name = 3; /// The name of the model for display purposes. Ex. AB1234
+    string description = 4; /// A short description of the model. Ex. A generic laser model
+    string oem = 5; /// The manufacturer of the model. Ex. Gigaphoton
+    Type type = 6; /// A Type message that corresponds to this model's type. See Type.
+    uint32 plugin_id = 7; /// Unique ID of the plugin this model belongs to. Ex. 5
+    string series = 8; /// The name of model series to classify. Ex. GTx
+}
+
+/// Holds information about a module. Returned when a module is requested.
+message EquipmentModule {
+    uint32 id = 1; /// Unique ID of equipment. Ex. 3
+    string name = 2; /// Parameter name. TODO: Rules or characteristics for this field?
+    string key = 3; /// TODO: Rules or characteristics for this field?
+    string lifetime_key = 4; /// TODO: Rules or characteristics for this field?
+    Model model = 5; /// A Model message that corresponds to this module.
+    uint32 default_lifetime = 6; /// Default lifetime of this module.
+    double replacement_time = 7; /// Suggested length of module replacement operation, used in various scheduling estimates
+    double underutilization_percent = 8; /// Maximum underutilization allowed for replacement scheduling
+    double overutilization_percent = 9; /// Maximum overutilization allowed for replacement scheduling
+}
+
+/// Used to create Module
+message InstalledEquipmentModule {
+    uint32 id = 1; /// Unique ID of equipment. Ex. 3
+    uint32 lifetime = 2; /// Lifetime of the installed module.
+    uint32 default_lifetime = 3; /// Default lifetime of this module.
+    string version = 4; /// Version number of module
+    string calculation_target = 5; /// Target plugin to perform special replacement date calc
+    string installed_date = 6; /// Date of installation
+    Equipment equipment = 7; /// An equiment that corresponds to this installed module. See Equipment above.
+    EquipmentModule equipment_module = 8; /// A module that corresponds to this installed module. See Module above.
+}
+
+/// Displays the status for a piece of equipment
+message EquipmentStatus {
+    bool status = 1; /// A quick good bad status representation 1 = good 0 = bad
+    Status details = 2; /// Detailed information on Status in the for of a string and object identifier
+}
+
+// ------------------------------------------------------------------------------------------------
+// LINES
+// ------------------------------------------------------------------------------------------------
+message Line {
+    uint32 id = 1; /// Unique ID of the line. Ex. 43
+    string name = 2; /// The name of the line. Ex. Gigaphoton Fab 1
+    string description = 3; /// A short description or clarifying comments. Ex. This line is the first Gigaphoton fab.
+    repeated uint32 equipment_ids = 4 [packed=true]; /// A list of equipment IDs belonging to this line. Ex. 1, 54, 3456
+}
+
+// ------------------------------------------------------------------------------------------------
+// USER
+// ------------------------------------------------------------------------------------------------
+
+/// A user object that excludes password and salt
+message SafeUser {
+    uint32 id = 1; /// Unique ID of the user. Ex. 543
+    string first_name = 2; /// User's first name. Ex. Joe
+    string last_name = 3; /// User's last name. Ex. Smith
+    string email = 4; /// User's email. Ex. jsmith54@gmail.com
+    string company = 5; /// User's company. Ex. GRAYBOX
+    string section = 6; /// User's section in company. Ex. Technology Team
+    string phone = 7; /// User's phone number. Ex. 6035237164
+    string mobile = 8; /// User's mobile phone number. Ex. 6035237164
+    string username = 9; /// Unique username associated with this user's account and used at login. Ex. jsmith54
+    string preferences = 10; /// The user's front end UI display preferences
+    repeated uint32 groups = 12 [packed=true]; /// An array of unique group ids that this user is apart of. Ex. [1, 5, 31]
+    string type = 13; /// The type of user. Ex. system or user
+    uint32 role_id = 14; /// A role message associated with the user
+    bool license = 15; /// Bool denoting if the user has accepted most recent user license agreement
+    string auth_status = 16; /// String denoting whether two factor authentication
+    string secret_code = 17; /// Denoting the secret code used for two-factor authentication
+}
+
+/// Holds information about a user. Note this will include passwords and salts that should be excluded from returning passed the DAL
+message User {
+    uint32 id = 1; /// Unique ID of the user. Ex. 543
+    string first_name = 2; /// User's first name. Ex. Joe
+    string last_name = 3; /// User's last name. Ex. Smith
+    string email = 4; /// User's email. Ex. jsmith54@gmail.com
+    string company = 5; /// User's company. Ex. GRAYBOX
+    string section = 6; /// User's section in company. Ex. Technology Team
+    string phone = 7; /// User's phone number. Ex. 6035237164
+    string mobile = 8; /// User's mobile phone number. Ex. 6035237164
+    string username = 9; /// Unique username associated with this user's account and used at login. Ex. jsmith54
+    string preferences = 10; /// The user's front end UI display preferences
+    string password = 11; /// User's encoded password used for authorization. Bcrypt encoded.
+    repeated uint32 groups = 12 [packed=true]; /// An array of unique group ids that this user is apart of. Ex. [1, 5, 31]
+    string type = 13; /// The type of user. Ex. system or user
+    uint32 role_id = 14; /// A role message associated with the user
+    bool license = 15; /// Bool denoting if the user has accepted most recent user license agreement
+    string auth_status = 16; /// Indicates the status used for two factor authentication
+    string secret_code = 17; /// Indicates the secret code used for two factor authentication
+}
+
+message Username {
+    string first_name = 1; /// User's first name. Ex. Joe
+    string last_name = 2; /// User's last name. Ex. Smith
+    string username = 3; /// Unique username associated with this user's account and used at login. Ex. jsmith54
+    uint32 id = 4; /// Unique id associated with this user's account. Ex. 1
+    uint32 role_id = 5; /// A role message associated with the user
+    string type = 6; /// The type of user. Ex. system or user
+}
+
+// ------------------------------------------------------------------------------------------------
+// GROUP
+// ------------------------------------------------------------------------------------------------
+
+/// Holds information about a group. Groups are used to organize similar equipment and provide users access to those equipment's data.
+message Group {
+    uint32 id = 1; /// Unique ID of the group. Ex. 43
+    string name = 2; /// The name of the group. Ex. Gigaphoton Lasers
+    string description = 3; /// A short description or clarifying comments. Ex. This group contains only Gigaphoton lasers.
+    repeated uint32 equipment = 4 [packed=true]; /// A list of equipment IDs belonging to this group. Ex. 1, 54, 3456
+    repeated uint32 users = 5 [packed=true]; /// A list of user IDs belonging to this group. Ex. 1, 2, 3
+}
+
+// ------------------------------------------------------------------------------------------------
+// ROLE
+// ------------------------------------------------------------------------------------------------
+
+/// Holds information about a role.
+message Role {
+    uint32 id = 1; /// The unique ID of the role. Ex. 543
+    string key = 2; /// The role's unique key, must be one word with only letters and underscores. Ex. giga_user
+    string label = 3; /// The role's display name on the front end. Ex. Gigaphoton User
+    string installed_by = 4; /// The plugin that created the role. Ex. gigaphoton
+    string type = 5; /// The role type. Either 'user' or 'system'
+}
+
+// ------------------------------------------------------------------------------------------------
+// PERMISSION
+// ------------------------------------------------------------------------------------------------
+message Permission {
+    uint32 id = 1; /// Unique ID of the permissions. Ex. 154
+    string service = 2; /// The service the permission belongs to. Ex. user
+    string action = 3; /// The action the permission allows. Ex. read
+    string description = 4; /// A short description of the permission. Ex. Allows role to read the list of users
+    string installed_by = 5; /// The service that installed the permission
+    repeated Role roles = 6; /// A list of roles that have this permission
+    repeated string methods = 7; /// The gRPC methods associated with this permission. Ex. Create
+}
+
+// ------------------------------------------------------------------------------------------------
+// PARAMETER
+// ------------------------------------------------------------------------------------------------
+
+/// Holds information about a parameter. Does not store data values for a parameter, just high level information.
+message Parameter {
+    uint32 id = 1; /// Unique ID of parameter.
+    uint32 equipment_model_id = 2; /// Unique ID of the equipment model this parameter is associated with. Ex. 5
+    uint32 secs_vid = 3; /// Optional SECS VID that companies may prefer to store. Ex. 589
+    string key = 4; /// Parameter key. Must be an unbroken string, all lowercase, with words separated by underscores. Ex. osc_pulse_energy
+    string description = 5; /// A short description of the parameter. Ex. Pulse Energy Oscillator
+    string unit = 6; /// Unit.
+    bool is_default_param = 7; /// Determines if the parameter shows up in the quick select list or not. Defaults to 'false'
+    bool is_config_param = 8; /// If set to 'true' the parameter is a configuration parameters. Defaults to 'false'
+    bool is_transient = 9; /// Whether a parameter can be requested ad hoc or not. Defaults to 'false'
+    string display_name = 10; /// Parameter name.
+    string category =11; /// Represents the period of the parameter.
+}
+
+/// Holds data values for a specific parameter.
+message ParameterData {
+    uint32 id = 1; /// Unique ID of the piece of parameter data. Ex. 13
+    uint32 equipment_id = 2; /// Unique ID of equipment this data came from. Ex. 5
+    uint32 parameter_id = 3; /// Unique ID of parameter this data value is for. Ex. 3
+    string parameter_key = 4; /// Parameter's key. Ex. osc_pulse_energy
+    string timestamp = 5; /// The time this data value was recorded Ex. 2017-04-28 22:28:12
+    string value = 6; /// The value at the specified time. Ex. 3598
+    repeated uint32 exceptions = 7 [packed=true]; /// A list of exceptions associated with this piece of data
+}
+
+message ParameterSet {
+    uint32 id = 1; /// Unique ID of the parameter set.
+    uint32 plugin_id = 2; /// The unique ID of the driver to find parameter sets for. Ex. 54
+    string key = 3; /// Unique by driver. Must be an unbroken string, all lowercase, with words separated by underscores. Ex. osc_energy
+    string name = 4; /// The display name for the set. Ex. Osc Energy
+    string description = 5; /// A short description of the parameter set. Ex. Holds parameters dealing with oscillator energy.
+    uint32 pull_rate = 6; /// The rate in seconds that the pull core plugin will request data.
+    uint32 equipment_model_id = 7; /// Not required. Associate a parameter set with an equipment model. Ex. 5
+}
+
+/// Holds data about a monitor as well as it's latest value
+message Monitor {
+    uint32 id = 1; // Unique ID of the monitor
+    uint32 owner_id = 2; /// Unique ID of the user who created the monitor
+    uint32 equipment_id = 3; /// Unique ID of the equipment that is being monitored
+    string upper_limit = 4; /// The limit the data must not exceed
+    string lower_limit = 5; /// The limit the data cannot be below
+    string state = 6; /// The current state of the monitor. Ex. ok, alarm, no_data
+    bool notify = 7; /// If true, when the upper or lower limit is exceeded, the user will be messaged in addition to a history created
+    string type = 8; /// The type of monitor. Ex. parameter
+    uint32 type_id = 9; // The id for the monitor type. Ex. 1
+    uint32 threshold = 10; // Threshold
+    uint32 warning_period = 11; // Warning period
+    string name = 12; /// Monitor name
+    string updated_at = 13; /// Updated at
+}
+
+message MonitorData {
+    uint32 monitor_id = 1; /// The monitor this history belongs to
+    uint32 data_id = 2; /// The monitor this history belongs to
+    bool outside_threshold = 3; /// Details about the threshold breach
+    string recorded_at = 4; /// When the history was recorded
+}
+
+message MonitorHistory {
+    uint32 id = 1; /// Unique ID of monitor history
+    uint32 monitor_id = 2; /// Unique ID of the monitor this data is recorded for
+    string type = 3; /// The type of monitor. Ex. parameter
+    uint32 type_id = 4; // The ID for the monitor type. Ex. 1
+    uint32 count = 5; /// Number of alarm occurrences in history
+    string upper_limit = 6; /// The limit the data must not exceed
+    string lower_limit = 7; /// The limit the data cannot be below
+    string alarm_start = 8; /// When the alarm state started
+    string alarm_end = 9; /// When the alarm state ended
+}
+
+/// Holds data values that aggregated specific parameters.
+message AggregationData {
+    string parameter_key = 1; /// Parameter's key. Ex. osc_pulse_energy
+    string timestamp = 2; /// The time this data value was recorded Ex. 2017-04-28 22:28:12
+    string value = 3; /// The value at the specified time. Ex. 3598
+    repeated uint32 exceptions = 4 [packed=true]; /// A list of exceptions associated with this piece of data
+    uint32 equipment_id = 5; /// Unique ID of the equipment this comment belongs to. OPTIONAL
+}
+
+message GoldParameter {
+    uint32 id = 1; /// Parameter's key. Ex. osc_pulse_energy
+    uint32 list_id = 2; /// Parameter's key. Ex. osc_pulse_energy
+    uint32 parameter_no = 3; /// The time this data value was recorded Ex. 2017-04-28 22:28:12
+    string parameter_name = 4; /// The time this data value was recorded Ex. 2017-04-28 22:28:12
+    string lower_limit = 5; /// The value at the specified time. Ex. 3598
+    string upper_limit = 6; /// The value at the specified time. Ex. 3598
+}
+
+message GoldParameterList {
+    uint32 id = 1; /// Parameter's key. Ex. osc_pulse_energy
+    string list_name = 2; /// The time this data value was recorded Ex. 2017-04-28 22:28:12
+    uint32 status = 3; /// The value at the specified time. Ex. 3598
+    repeated GoldParameter parameters = 4; /// A list of exceptions associated with this piece of data
+}
+
+// ------------------------------------------------------------------------------------------------
+// CHART
+// ------------------------------------------------------------------------------------------------
+
+/// Holds information about chart configurations for rendering on the front end UI. 
+message Chart {
+    uint32 id = 1; /// Unique ID of the chart. Ex. 3
+    uint32 owner_id = 2; /// Unique ID of the user that owns this chart. Ex. 5
+    string json = 3; /// JSON string containing information about chart display and metrics to display. Ex. "setting": "value"
+    bool isPublic = 4; /// If true, the chart will be publicly viewable by all users. Default is false. Ex. true
+    string key = 5; /// Given by the manifest file. Must be an unbroken string, all lowercase, with words separated by underscores
+    uint32 equipment_model_id = 6; /// Unique ID of the equipment type that this widget is associated with. Ex. 4
+    string updated_at = 7; /// The last time the chart was updated in the database.
+    repeated uint32 equipment = 8 [packed=true]; /// A list of equipment that this chart will display data for. See Equipment.
+    repeated Comment comments = 9; /// A list of comments associated with this chart.
+}
+
+/// Holds user comments about a chart.
+message Comment {
+    uint32 id = 1; /// Unique ID of the comment
+    uint32 owner_id = 2; /// Unique ID of the user that created the comment
+    uint32 chart_id = 3; /// Unique ID of the chart this comment belongs to
+    uint32 equipment_id = 4; /// Unique ID of the equipment this comment belongs to. OPTIONAL
+    string body = 5; /// The comment content
+    string image_encoded = 6; /// The base64 encoded image data associated with this comment.
+    string created_at = 7; /// When the comment was created
+    string updated_at = 8; /// When the comment was last edited
+}
+
+// ------------------------------------------------------------------------------------------------
+// EXCEPTION
+// ------------------------------------------------------------------------------------------------
+
+/// Holds information about exceptions. Exceptions are recorded when a parameter's data value is above a threshold specified by a user or driver.
+message Exception {
+    uint32 id = 1; /// Unique ID for the exception. Ex. 3
+    uint32 equipment_id = 2; /// Unique ID of a piece of equipment to find exceptions for. Ex. 3
+    string severity = 3; /// The severity of the exception. Can be info, warning, error, or fatal.
+    uint32 exception_id = 4; /// The specific equipment error code associated with this exception. Ex. 1310
+    uint32 exception_sub_id = 5; /// The equipment specific sub error code associated with this exception. Ex. 4225
+    string name = 6; /// The name of the exception. Ex. LOW ENERGY.
+    string description = 7; /// Further details about the exception. Ex. There have been to many instances of energy emission below the acceptable limit.
+    string json = 8; /// A json string of exception data associated with this exception. Ex. [{"parameterKey": "temperature_target","values": [1, 2, 3, 4, 5, 6, 7, 8]},{...}]
+    string recorded_at = 9; /// The date the exception was recorded. Ex. 2017-04-28 23:55:12.269576
+    repeated ParameterData snapshots = 10; /// Data associated with the exception
+}
+
+message ExceptionList {
+    uint32 id = 1;
+    uint32 owner_id = 2; /// Unique ID of the user who created this exception list. Ex. 5
+    string name = 3; /// Name of exception List Ex. My Exceptions
+    bool show_notifications = 4; /// If true, will send notficiations when an exception in the list occurs
+    string rules = 5; /// A json string of the exception list rules
+    repeated uint32 equipment_ids = 6 [packed=true]; /// A list of equipment to monitor ex. [1,2,3]
+}
+
+// ------------------------------------------------------------------------------------------------
+// WIDGET
+// ------------------------------------------------------------------------------------------------
+
+/// Holds information to display widgets on the front end UI. Widget configurations are created by drivers on install.
+message Widget {
+    uint32 id = 1; /// Unique ID of the widget. Ex. 5
+    string graph_type = 2; /// Type of widget to create. Can be bar, line, scatter, radio
+    string title = 3; /// The title of the widget that displays on the front end UI. Ex. Usage
+    uint32 equipment_model_id = 4; /// Unique ID of the equipment type that this widget is associated with. Ex. 4
+    string parameters = 5; /// JSON string of the parameters to widget. Ex. "setting": "value"
+    bool dashboard = 6; /// Specifies if the widget should be displayed on the dashboard
+}
+
+// ------------------------------------------------------------------------------------------------
+// DRIVER
+// ------------------------------------------------------------------------------------------------
+
+/// Holds the status of an item
+message Status {
+    uint32 id = 1; /// Unique ID of the item. Ex. 3
+    string status = 2; /// The status of the item. Ex. ok
+}
+
+// ------------------------------------------------------------------------------------------------
+// PLUGIN MANAGER
+// ------------------------------------------------------------------------------------------------
+message Plugin {
+    uint32 id = 1; /// Unique ID of the plugin. Ex. 3
+    string name = 2; /// The name of the plugin in vendor/package format. Ex. gigaphoton/user
+    string version = 3; /// The plugin version. Ex. 2.8.1
+    string license = 4; /// The licensing for the plugin. Ex. MIT
+    string description = 5; /// Short summary of the plugin. Ex. Handles user creation, and authorization.
+    string display_name = 6; /// The display name of the plugin. Ex. User Core Service
+    string plugin_type = 7; /// The type of plugin. Choose from core, driver, and plugin
+    string status = 8; /// The status of the plugin's docker container
+    repeated PluginUI uis = 9; /// A list of the UIs associated with this plugin
+    string dtab = 10; /// Dtab name used as "driver" identifier in context header when communicating via linkerd
+    Service service = 12;
+    Database database = 13;
+    bytes proto = 14; /// tar file containing the proto files for the plugin
+}
+
+message PluginUI {
+    uint32 plugin_id = 1; /// The plugin_id of the plugin being requested.
+    string key = 2; /// The key of the plugin_ui being requested.
+    string json = 3; /// The json string of the plugin_ui being created.
+    uint32 equipment_model_id = 4; /// Unique ID of the model this ui belongs to, or 0.
+}
+
+message Metadata {
+    string key = 1; /// The key that identifies the metadata
+    string value = 2; /// The value of the metadata
+}
+
+message Service {
+    string image = 1;
+    repeated ServicePort ports = 2;
+    string volume_target = 3;
+    repeated string forwarded_ports = 4;
+    repeated string rpc_services = 5;
+    repeated string http_services = 6;
+    string external_host = 7;
+    string external_port = 8;
+}
+
+message ServicePort {
+    bool is_routed = 1;
+    string port = 2;
+    string name = 3;
+    bool is_readiness_probe = 4;
+    string ready_probe_type = 5;
+    bool is_liveness_probe = 6;
+    string live_probe_type = 7;
+}
+
+message Database {
+    string image = 1;
+    string port = 2;
+    string volume_target = 3;
+    string username_env = 4;
+    string password_env = 5;
+    string name_env = 6;
+    repeated string data_tables = 7;
+}
+
+// ------------------------------------------------------------------------------------------------
+// MAINTENANCE
+// ------------------------------------------------------------------------------------------------
+message MaintenancePeriod {
+    uint32 id = 1; /// Unique ID of the MaintenancePeriod. Ex. 3
+    uint32 history_id = 2; // // History ID of the MaintenancePeriod. Ex. 1
+    uint32 status = 3; // The status of the MaintenancePeriod. Ex. 9
+    string start_date = 4; /// Maintenance start date and time. Ex. 2017/12/31 23:30
+    uint32 operation_length = 5; /// The time required for maintenance, the unit is minutes. Ex. 90
+    uint32 total_down_time = 6; /// Total down time at maintenance, the unit is minutes. Ex. 70
+    repeated PeriodEquipment period_equipments = 7; /// equipments that this MaintenancePeriod is associated with. See Equipment above.
+    uint32 owner_user_id = 8;  /// The owner_user_id of the owner of this MaintenancePeriod. Ex. 1
+}
+message MaintenancePlan {
+    uint32 id = 1; /// Unique ID of the MaintenancePlan. Ex. 3
+    uint32 history_id = 2; // // History ID of the MaintenancePlan. Ex. 1
+    uint32 status = 3; // The status of the MaintenancePlan. Ex. 9
+    string title = 4; /// The title of the MaintenancePlan. Ex. maintenance for Leser1
+    uint32 operation_length = 5; /// The time required for maintenance, the unit is minutes. Ex. 90
+    string start_date = 6; /// Maintenance start date and time. Ex. 2017/12/31 23:30
+    string rejection_reason = 7; /// Reason why the approval request was rejected. Ex. sorry,do not pull in this period.
+    string description = 8; /// Description of maintenance. Ex Replacement work due to part breakdown of Leser1.
+    uint32 maintenance_period_id = 9;  /// Unique ID of the MaintenancePeriod that this MaintenancePlan is associated with. Ex. 5
+    Equipment equipment = 10; /// equipment that this MaintenancePeriod is associated with. See Equipment above.
+    repeated EquipmentModule modules = 11; /// modules that this MaintenancePeriod is associated with. See Module above.
+    uint32 rejection_user_id = 12; /// rejection_user_id that rejected approval request. Ex. 1
+    uint32 owner_user_id = 13;  /// The owner_user_id of the owner of this MaintenancePeriod. Ex. 1
+    uint32 pr_operation_length = 14; /// for PassdownReport,The time required for maintenance, the unit is minutes. Ex. 90
+    string pr_start_date = 15; /// for PassdownReport,Maintenance start date and time. Ex. 2017/12/31 23:30
+    string pr_description = 16; /// for PassdownReport,Description of maintenance. Ex Replacement work due to part breakdown of Leser1.
+    repeated EquipmentModule pr_modules = 17; /// for PassdownReport,modules that this MaintenancePeriod is associated with. See Module above.
+    bool pr_include_unplaned = 18; /// for PassdownReport,Work that had not been planned falg. Ex false.
+    string period_start_date = 19; /// Start time of MaintenancePeriod to which MaintenancePlan belongs. Ex. 2017/12/28 21:00
+}
+message Escalation {
+    uint32 id = 1; /// Unique ID of the Escalation. Ex. 3
+    uint32 history_id = 2; // // History ID of the Escalation. Ex. 1
+    uint32 status = 3; // The status of the Escalation. Ex. 9
+    string title = 4; /// The title of the Escalation. Ex. escalation for Leser1
+    string escalation_start_time = 5; /// Escalation start date and time. Ex. 2017/12/31 23:30
+    string target_resolution_time = 6; /// Escalation resolution time. Ex. 2017/12/31 23:30
+    string description = 7; /// Description of escalation. Ex Replacement work due to part breakdown of Leser1.
+    uint32 permission_user_id = 8;  /// The user ID of the edit permit of this Escalation. Ex. 1
+    uint32 owner_contract_tel = 9;  /// Owner contract disp flag for Tel. Ex. 0
+    uint32 owner_contract_mobile = 10;  /// Owner contract disp flag for Mobile. Ex. 1
+    uint32 owner_contract_other = 11;  /// Owner contract disp flag for Other. Ex. 0
+    string owner_contract_other_text = 12;  /// Owner other contract text. Ex. NightTime=045-000-0000,DayTime=090-0000-0000
+    Equipment equipment = 13; /// equipment that this Escalation is associated with. See Equipment above.
+    SafeUser owner_user = 14;  /// The owner_user of the owner of this Escalation. See SafeUser above.
+    uint32 approver_user_id = 15;  /// The approver_user_id of the approver of this Escalation. See SafeUser above.
+    repeated uint32 permission_users_id = 16;  /// The permission_users_id of the edit permit of this Escalation. See SafeUser above.
+    uint32 owner_user_id = 17;  /// The owner_user_id of the owner of this Escalation. Ex 1
+}
+message ActionPlan {
+    uint32 id = 1; /// Unique ID of the ActionPlan. Ex. 3
+    uint32 history_id = 2; // // History ID of the ActionPlan. Ex. 1
+    uint32 status = 3; // The status of the ActionPlan. Ex. 9
+    string title = 4; /// The title of the ActionPlan. Ex. maintenance for Leser1
+    uint32 escalations_id = 5; /// Unique ID of the Escalation that this ActionPlan is associated with. Ex. 5
+    string create_date = 6; /// ActionPlan create date and time. Ex. 2017/12/24 21:30
+    string start_date = 7; /// ActionPlan start date and time. Ex. 2017/12/31 15:30
+    string end_date = 8; /// ActionPlan end date and time. Ex. 2017/12/31 23:30
+    string detail = 9; /// Detail of ActionPlan. Ex Replacement work due to part breakdown of Leser1.
+    uint32 owner_user_id = 10;  /// The owner_user_id of the owner of this ActionPlan. Ex 1
+}
+message MaintenanceFile {
+    uint32 id = 1; /// Unique ID of the MaintenanceFile. Ex. 3
+    uint32 plan_id = 2; /// ID of the MaintenancePlan that this MaintenanceFile is associated with. Ex. 4
+    uint32 link_flag = 3; /// Flag of the MaintenancePlan or PassdownReport. Ex. 1
+    string name = 4; /// Name of the file. Ex. 90
+    uint32 size = 5; /// Size of the file. Ex. 1024
+    string mimetype = 6;  /// Mimytype of the file. Ex. text/plain; charset=utf-8
+}
+message Performance {
+    Equipment equipment = 1;  /// equipment that this Performance is associated with. See Equipment above.
+    repeated YearlyData yearly_data = 2;  /// Number of occurrences of Escalation and MaintenancePeriod for one year. Ex.3
+}
+message YearlyData {
+    string start_date = 1; /// Starting day of the relevant one year. Ex. 2017/12/18
+    string avail = 2;  /// Total time of OperationLength for one week. Ex.243
+    string mtbs = 3;  /// MTBS. Ex.3
+    string mtts = 4;  /// MTTS. Ex.3
+}
+message PeriodEquipment {
+    Equipment equipment = 1;  /// equipment that this Performance is associated with. See Equipment above.
+    uint32 down_time = 2;  /// Time to stop service for maintenance. Ex.120
+    uint32 shortened_time = 3;  /// Time reduced by combination of parts. Ex.30
+}
+

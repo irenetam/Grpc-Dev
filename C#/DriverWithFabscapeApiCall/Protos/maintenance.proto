@@ -1,0 +1,61 @@
+/**
+ * MaintenanceAction services and messages
+ * This is a custom .proto file that defines the shape of our server's communication layer.
+ */
+ syntax = "proto3";
+ package gigaphoton;
+ import "Protos/google/api/annotations.proto";
+ option csharp_namespace = "Plugin.CustomUI";
+
+ service MaintenanceService {
+    /// Get a list of MaintenanceActions for the given equipment
+    rpc GetMaintenanceActions (GetMaintenanceActionsRequest) returns (GetMaintenanceActionsReply) {
+        // Here we are telling gRCP to transcode an HTTP/JSON GET request to the specified endpoint to gRPC. This creates a RESTful endpoint that can be called by a browser. 
+        // More details here: https://cloud.google.com/endpoints/docs/grpc/transcoding
+        option (google.api.http) = {
+            get: "/v1/gigaphoton/maintenance/GetMaintenanceActions"
+        };
+    }
+    /// Sets a given MaintenanceAction complete
+    rpc SetActionComplete (SetActionCompleteRequest) returns (SetActionCompleteReply) {
+        // Here we are telling gRCP to transcode an HTTP/JSON POST request to the specified endpoint to gRPC. This creates a RESTful endpoint that can be called by a browser. 
+        // More details here: https://cloud.google.com/endpoints/docs/grpc/transcoding
+        option (google.api.http) = {
+            post: "/v1/gigaphoton/maintenance/SetActionComplete"
+            body: "*"
+        };
+    }
+ }
+
+// ------------------------------------------------------------------------------------------------
+// OBJECTS
+// ------------------------------------------------------------------------------------------------
+message MaintenanceAction {
+    uint32 ActionID     = 1;
+    string ActionName   = 2;
+    uint32 Frequency    = 3; // Represents how often this action should be performed in number of days
+    uint32 EquipmentID  = 4;
+    bool IsCompleted    = 5;
+    string DateCreated  = 6;
+    string DateUpdated  = 7;
+}
+
+// ------------------------------------------------------------------------------------------------
+// REQUESTS
+// ------------------------------------------------------------------------------------------------
+message GetMaintenanceActionsRequest {
+    uint32 EquipmentID = 1;
+}
+
+message SetActionCompleteRequest {
+    uint32 ActionID = 1;
+}
+
+// ------------------------------------------------------------------------------------------------
+// REPLIES
+// ------------------------------------------------------------------------------------------------
+message GetMaintenanceActionsReply {
+    repeated MaintenanceAction actions = 1;
+}
+
+message SetActionCompleteReply {}

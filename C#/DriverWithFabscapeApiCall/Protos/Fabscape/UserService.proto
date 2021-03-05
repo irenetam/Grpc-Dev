@@ -1,0 +1,321 @@
+/**
+ * User RPC services and messages
+ */
+syntax = "proto3";
+option csharp_namespace = "DriverWithFabscapeApiCall";
+
+package fabscape;
+import "Protos/Fabscape/shared.proto";
+import "Protos/google/api/annotations.proto";
+
+/**
+ * The service that the user server exposed. Contains RPC methods to access and manipulate user data.
+ */
+service UserService {
+    /// Get a single user by ID.
+    rpc Get (GetUserRequest) returns (GetUserReply) {
+        option (google.api.http) = {
+            get: "/v1/users/{id}"
+        };
+    }
+    /// Get a list of users by permission
+    rpc GetUsersByPermission (GetUsersByPermissionRequest) returns (GetUsersByPermissionReply) {
+        option (google.api.http) = {
+            get: "/v1/users_by_permission"
+        };
+    }
+    /// Get a single user by ID.
+    rpc GetUserByToken (GetUserByTokenRequest) returns (GetUserByTokenReply) {
+        option (google.api.http) = {
+            get: "/v1/user"
+        };
+    }
+    /// Get a list of usernames in the system for messaging
+    rpc SearchUsername (SearchUsernameRequest) returns (SearchUsernameReply) {
+        option (google.api.http) = {
+            get: "/v1/usernames"
+        };
+    }
+    /// Get a list of all the users.
+    rpc Search (SearchUserRequest) returns (SearchUserReply) {
+        option (google.api.http) = {
+            get: "/v1/users"
+        };
+    }
+    /// Create a new user. This user will not have access to any data until it is added to a group.
+    rpc Create (CreateUserRequest) returns (CreateUserReply) {
+        option (google.api.http) = {
+            post: "/v1/users"
+            body: "*"
+        };
+    }
+    /// Create a new user. Only works if there are no users in the system
+    rpc CreateFirst (CreateUserRequest) returns (CreateUserReply) {
+        option (google.api.http) = {
+            post: "/v1/first_user"
+            body: "*"
+        };
+    }
+    /// Delete a user. They will no longer be able to log into the system.
+    rpc Delete (DeleteUserRequest) returns (DeleteUserReply) {
+        option (google.api.http) = {
+            delete: "/v1/users/{id}"
+        };
+    }
+    /// Update a user. Only used for user information, see ResetPassword to change a user's password.
+    rpc Update (UpdateUserRequest) returns (UpdateUserReply) {
+        option (google.api.http) = {
+            put: "/v1/users/{id}"
+            body: "*"
+        };
+    }
+    /// Update a user by a token.
+    rpc UpdateUserByToken (UpdateUserByTokenRequest) returns (UpdateUserByTokenReply) {
+        option (google.api.http) = {
+            put: "/v1/user"
+            body: "*"
+        };
+    }
+    /// Change a user's password.
+    rpc ResetPassword (ResetPasswordRequest) returns (ResetPasswordReply) {
+        option (google.api.http) = {
+            put: "/v1/users/{user_id}/reset_password"
+            body: "*"
+        };
+    }
+    /// Authorize a user
+    rpc AuthorizeUser (AuthorizeUserRequest) returns (AuthorizeUserReply) {
+        option (google.api.http) = {
+            post: "/v1/users/authorize"
+            body: "*"
+        };
+    }
+
+    /// Checks whether any users are installed on the system
+    rpc HaveUsers (HaveUsersRequest) returns (HaveUsersReply) {
+        option (google.api.http) = {
+            get: "/v1/have_users"
+        };
+    }
+
+    /// Create a new user license acceptance entry
+    rpc CreateLicense (CreateLicenseRequest) returns (CreateLicenseReply) {
+        option (google.api.http) = {
+            post: "/v1/license"
+            body: "*"
+        };
+    }
+
+    /// Two factor authentication information getting
+    rpc GetTwoFactorAuth (GetTwoFactorAuthRequest) returns (GetTwoFactorAuthReply) {
+        option (google.api.http) = {
+            get: "/v1/two_factor_auth"
+        };
+    }
+
+    /// Two factor authentication information setting
+    rpc UpdateTwoFactorAuth (UpdateTwoFactorAuthRequest) returns (UpdateTwoFactorAuthReply) {
+        option (google.api.http) = {
+            put: "/v1/two_factor_auth"
+            body: "*"
+        };
+    }
+}
+
+// ------------------------------------------------------------------------------------------------
+// MESSAGE OBJECTS
+// ------------------------------------------------------------------------------------------------
+
+// See shared.proto
+
+// ------------------------------------------------------------------------------------------------
+// REQUEST
+// ------------------------------------------------------------------------------------------------
+
+/// Used to request a single user. Either id or username is required, but not both
+message GetUserRequest {
+    uint32 id = 1; /// The unique ID of the user. Ex. 5
+    string username = 2; /// The username of the user. Ex. jsmith57
+}
+
+message GetUsersByPermissionRequest {
+    string service = 1; /// The permission
+    string action = 2;
+}
+
+message GetUserByTokenRequest {
+    string token = 1; /// JWT token retrieved from user authorization
+}
+
+/// Used to request a list of users.
+message SearchUserRequest {
+    string user_type = 1; /// The user's type. Ex. system
+    repeated uint32 group_ids = 2; /// Filter the users return by if they are in the group
+}
+
+message SearchUsernameRequest {
+    uint32 group_id = 1; /// Filter search by user group. Optional. Ex. 1
+}
+
+/// Used to create a new user
+message CreateUserRequest {
+    string first_name = 1; /// The user's first name. Ex. Joe
+    string last_name = 2; /// The user's last name. Ex. Smith
+    string email = 3; /// The user's email. Ex. jsmith54@gmail.com
+    string company = 4; /// The user's company name. Ex. GRAYBOX
+    string section = 5; /// The user's company section. Ex. Technology Team
+    string phone = 6; /// The user's phone number. Ex. 5036215423
+    string mobile = 7; /// The user's mobile phone number. Ex. 5036215423
+    string username = 8; /// The username used to sign onto the system. Must be unique. Ex. jsmith54
+    uint32 role_id = 9; /// Unique ID of role that will determine the user's permissions. Ex. 1
+    string preferences = 10; /// The user's front end UI display preferences
+    string password = 11; /// The user's password encoded using bcrypt with a salt
+    string user_type = 12; /// The user's type. Ex. system
+}
+
+/// Used to delete a user. The user can no longer sign in.
+message DeleteUserRequest {
+    uint32 id = 1; /// The unique ID of the user to delete. Ex. 543
+    string username = 2; /// The username associated with the user
+    bool force = 3; /// If true, will hard delete user
+}
+
+/// Used to update a user's information. To change a password see ResetPassword.
+message UpdateUserRequest {
+    uint32 id = 1; /// The unique ID of the user. Ex. 543
+    string first_name = 2; /// New first name for the user. Ex. Joe
+    string last_name = 3; /// New last name for the user. Ex. Smith
+    string email = 4; /// New email for the user. Ex. jsmith54@gmail.com
+    string company = 5; /// New company for the user. Ex. GRAYBOX
+    string section = 6; /// New section for the user. Ex. Technology Team
+    string phone = 7; /// New phone number. Ex. 5036215423
+    string mobile = 8; /// New mobile phone number. Ex. 5036215423
+    string username = 9; /// New username. Ex. jsmith54
+    uint32 role_id = 10; /// Unique ID of the new role. Ex. 1
+    string preferences = 11; /// The user's front end UI display preferences
+    repeated uint32 groups = 12; /// A list of the groups to which the user belongs
+}
+
+message UpdateUserByTokenRequest {
+    string first_name = 1; /// New first name for the user. Ex. Joe
+    string last_name = 2; /// New last name for the user. Ex. Smith
+    string email = 3; /// New email for the user. Ex. jsmith54@gmail.com
+    string company = 4; /// New company for the user. Ex. GRAYBOX
+    string section = 5; /// New section for the user. Ex. Technology Team
+    string phone = 6; /// New phone number. Ex. 5036215423
+    string mobile = 7; /// New mobile phone number. Ex. 5036215423
+    string username = 8; /// New username. Ex. jsmith54
+    string preferences = 9; /// The user's front end UI display preferences
+}
+
+/// Used to change a user's password. The old and new password are both encoded strings using bcrypt and the user's salt.
+message ResetPasswordRequest {
+    uint32 user_id = 1; /// Unique ID of the user. Ex. 543
+    string new_password = 2; /// User's new password. Encoded with bcrypt and the user's salt.
+    string old_password = 3; /// User's old password. Encoded with bcrypt and the user's salt.
+}
+
+/// Used to authorize a user and return a signed JWT token
+message AuthorizeUserRequest {
+    string username = 1; /// User's unique username
+    string password = 2; /// User's password
+}
+
+message HaveUsersRequest {}
+
+/// Request entry to agree to current license terms of the fabscape version
+message CreateLicenseRequest {
+    uint32 user_id = 1; /// Unique ID of the user signing the license agreement
+    string name = 2; /// Current full legal name of the user
+    string email = 3; /// Current eamil of the user
+    string version = 4; /// Current version of Fabscape software license being accepted
+}
+
+/// Used to get two factor authentication information.
+message GetTwoFactorAuthRequest {
+    uint32 user_id = 1; /// Unique ID of the user signing the license agreement
+}
+
+/// Used to update two factor authentication information.
+message UpdateTwoFactorAuthRequest {
+    uint32 user_id = 1; /// Unique ID of the user signing the license agreement
+    string auth_status = 2; /// Two factor authentication status
+    string secret_code = 3; /// Two factor authentication secret code
+}
+
+// ------------------------------------------------------------------------------------------------
+// REPLIES
+// ------------------------------------------------------------------------------------------------
+
+/// Replies to Get method with a user
+message GetUserReply {
+    SafeUser user = 1;
+}
+
+message GetUsersByPermissionReply {
+    repeated SafeUser users = 1;
+}
+
+/// Replies to the GetUserByToken method with a safe user
+message GetUserByTokenReply {
+    SafeUser user = 1; /// User message excluding password and salt
+}
+
+/// A list of user messages used in response to RPC calls.
+message SearchUserReply {
+    repeated SafeUser users = 1; /// A list of user messages.
+}
+
+message SearchUsernameReply {
+    repeated Username usernames = 1;
+}
+
+/// Replies to the Create method with a new user
+message CreateUserReply {
+    User user = 1;
+}
+
+/// Replies to the Delete method
+message DeleteUserReply {}
+
+/// Replies to the Update method with the updated user
+message UpdateUserReply {
+    SafeUser user = 1;
+}
+
+/// Replies to the UpdateUserByToken method with the updated user
+message UpdateUserByTokenReply {
+    SafeUser user = 1;
+}
+
+/// Replies to the ResetPassword method with the updated user
+message ResetPasswordReply {
+    User user = 1; /// Updated user object
+}
+
+/// Replies to the AuthorizeUser method with an access token
+message AuthorizeUserReply {
+    string token = 1; /// JWT signed token to pass back to the server and prove identity
+}
+
+message HaveUsersReply {
+    bool have_users = 1; // Whether or not the system has users
+}
+
+/// Reply to a user create license verifying the user has accepted the current license version agreement
+message CreateLicenseReply {
+    bool success = 1; /// If true license was recorded; if false check error string for more info
+    string error = 2; /// If success is false there will be info regaurding the failure in this string
+}
+
+/// Replies create two factor authentication request
+message GetTwoFactorAuthReply {
+    string auth_status = 1; /// Two factor authentication status
+    string secret_code = 2; /// Two factor authentication secret code
+}
+
+/// Replies create two factor authentication request
+message UpdateTwoFactorAuthReply {
+    string auth_status = 1; /// Two factor authentication status
+    string secret_code = 2; /// Two factor authentication secret code
+}

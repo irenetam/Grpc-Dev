@@ -1,0 +1,100 @@
+/**
+ * Driver RPC services and messages
+*/
+syntax = "proto3";
+
+option csharp_namespace = "DriverWithMetaData";
+package fabscape;
+import "Protos/Fabscape/shared.proto";
+
+/**
+ * The service that a developer will use implement to create a driver. The Data Pull Client will use to retrieve
+ * data from the driver
+*/
+service Driver {
+    /// Returns data from equipment associated with a driver by predfined parameter set
+    rpc GetParameterDataSet(GetParameterDataSetRequest) returns (GetParameterDataReply) {}
+    /// Returns exceptions from equipment associated with a driver
+    rpc GetExceptions(GetExceptionsRequest) returns (GetExceptionsReply) {}
+    /// Returns the status of driver
+    rpc GetDriverStatus(GetDriverStatusRequest) returns (GetStatusReply) {}
+    /// Returns the status of the equipment associated with the driver
+    rpc GetEquipmentStatus(GetEquipmentStatusRequest) returns (GetStatusReply) {}
+    /// Returns data from equipment associated with driver by passed list of parameters
+    rpc GetParameterData(GetParameterDataRequest) returns (GetParameterDataReply) {}
+	/// Returns binary data from equipment associated with driver by passed list of log files
+	rpc GetParameterLogs(GetParameterLogsRequest) returns (stream GetParameterLogsReply) {}
+}
+
+// ------------------------------------------------------------------------------------------------
+// MESSAGE OBJECTS
+// ------------------------------------------------------------------------------------------------
+
+// See shared.proto
+
+// ------------------------------------------------------------------------------------------------
+// REQUESTS
+// ------------------------------------------------------------------------------------------------
+
+/// Used to request data from the equipment associated with a driver. The parameter_set_key would be associated
+/// with multiple parameters and pull data for all parameters that the driver included in that set
+message GetParameterDataSetRequest {
+    Equipment equipment = 1; /// The equipment target you wish to pull the data set from
+    string parameter_set_key = 2; /// The key of the data set you wish to pull, driver data sets are defined in manifest ex: "costOfOwnershipParameters"
+}
+
+/// Used to request any exceptions for a driver's equipment from a specific point in time forward.
+message GetExceptionsRequest {
+    Equipment equipment = 1; /// The equipment target you wish to pull the exceptions from
+    string from_timestamp = 2; /// Timestamp you wish to receive exception from going to current time Ex. 2017-04-28 22:28:12
+}
+
+/// Used to query the status of a driver
+message GetDriverStatusRequest {}
+
+/// Used to query the status of the driver's equipment
+message GetEquipmentStatusRequest {
+    Equipment equipment = 1; /// The equipment target you wish to check the status of
+}
+
+/// Used to request data from the equipment associated with a driver. The parameters returned are
+/// the ones passed into the parameterList. Only parameters defined as Non Transient can be used by this function
+message GetParameterDataRequest {
+    Equipment equipment = 1; /// The equipment target you wish to pull the data from
+    repeated Parameter parameters = 2; /// List of parameters you wish to pull from the equipment, only supported for isTransient=false parameters
+}
+
+/// Used to request data from the equipment associated with a driver. The parameters returned are
+/// binary data.
+message GetParameterLogsRequest {
+	Equipment equipment = 1; /// The equipment target you wish to pull the data from
+	map<string, string> metadata = 2; // The metadata is plugin's metadata
+	string Prefix = 3; /// The metadata prefix string
+}
+
+// ------------------------------------------------------------------------------------------------
+// REPLIES
+// ------------------------------------------------------------------------------------------------
+
+/// Replies with a list of parameter data messages
+message GetParameterDataReply {
+    repeated ParameterData parameter_data = 1; /// A list of parameter data messages.
+}
+
+/// Replies with a list of exceptions if there are any
+message GetExceptionsReply {
+    repeated Exception exceptions = 1; /// A list of exception messages.
+}
+
+/// Replies with the status of the object (either equipment or driver)
+message GetStatusReply {
+    bool status = 1; /// A quick good bad status representation 1 = good 0 = bad
+    Status details = 2; /// Detailed information on Status in the for of a string and object identifier
+}
+
+/// Replies with the binary data
+message GetParameterLogsReply {
+	string fileName = 1; /// A datas file name
+	bytes datas = 2; /// A binary data message.
+	map<string, string> metadata = 3; /// Driver specific attribute information
+}
